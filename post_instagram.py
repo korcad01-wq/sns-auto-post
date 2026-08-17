@@ -46,11 +46,9 @@ def create_media_container(ig_user_id: str, access_token: str, image_url: str, c
         "image_url": image_url,
         "caption": caption,
         "access_token": access_token,
-        
-        if resp.status_code >= 400:
-    print("Meta API 에러 응답:", resp.text)
-                         
     })
+    if resp.status_code >= 400:
+        print("Meta API 에러 응답:", resp.text)
     resp.raise_for_status()
     return resp.json()["id"]
 
@@ -61,6 +59,8 @@ def publish_media(ig_user_id: str, access_token: str, creation_id: str) -> dict:
         "creation_id": creation_id,
         "access_token": access_token,
     })
+    if resp.status_code >= 400:
+        print("Meta API 에러 응답:", resp.text)
     resp.raise_for_status()
     return resp.json()
 
