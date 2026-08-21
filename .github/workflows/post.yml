@@ -2,8 +2,18 @@ name: Daily SNS Post
 
 on:
   schedule:
-    - cron: '0 0 * * 1,3,5'  # UTC 00:00 = KST 09:00, 매주 월/수/금
-  workflow_dispatch: {}
+    - cron: '0 0 * * 1,3,4,5'  # UTC 00:00 = KST 09:00 (오전), 매주 월/수/목/금
+    - cron: '0 6 * * 1,3,4,5'  # UTC 06:00 = KST 15:00 (오후), 매주 월/수/목/금
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: '수동 실행 시 시간대'
+        required: false
+        default: 'AM'
+        type: choice
+        options:
+          - AM
+          - PM
 
 jobs:
   post:
@@ -17,8 +27,20 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - name: Determine slot
+        id: slot
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "slot=${{ github.event.inputs.slot }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 0 * * 1,3,4,5" ]; then
+            echo "slot=AM" >> "$GITHUB_OUTPUT"
+          else
+            echo "slot=PM" >> "$GITHUB_OUTPUT"
+          fi
+
       - run: python post_instagram.py
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IMAGE_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main
+          SLOT: ${{ steps.slot.outputs.slot }}
