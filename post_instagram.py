@@ -6,7 +6,8 @@ from datetime import date, timedelta
 import requests
 
 GRAPH_API_VERSION = "v26.0"
-POSTING_WEEKDAYS = (0, 2, 4)  # 월, 수, 금 (0=월요일)
+POSTING_WEEKDAYS = (0, 2, 3, 4)  # 월, 수, 목, 금 (0=월요일)
+SLOTS_PER_DAY = 2  # 오전(AM) / 오후(PM)
 
 
 def count_posting_days(start: date, end: date) -> int:
@@ -19,7 +20,7 @@ def count_posting_days(start: date, end: date) -> int:
     return count
 
 
-def pick_todays_post(calendar: dict, today: date):
+def pick_todays_post(calendar: dict, today: date, slot: str):
     if today.weekday() not in POSTING_WEEKDAYS:
         return None
 
@@ -27,7 +28,10 @@ def pick_todays_post(calendar: dict, today: date):
     if today < start_date:
         return None
 
-    post_number = count_posting_days(start_date, today) - 1  # 0-indexed
+    day_index = count_posting_days(start_date, today) - 1  # 0-indexed
+    slot_index = 0 if slot == "AM" else 1
+    post_number = day_index * SLOTS_PER_DAY + slot_index
+
     categories = calendar["categories"]
     category = categories[post_number % len(categories)]
 
@@ -73,10 +77,11 @@ def main():
     with open("content_calendar.json", encoding="utf-8") as f:
         calendar = json.load(f)
 
+    slot = os.environ.get("SLOT", "AM")
     today = date.today()
-    post = pick_todays_post(calendar, today)
+    post = pick_todays_post(calendar, today, slot)
     if post is None:
-        print(f"{today.isoformat()}: 오늘은 게시 예정이 없습니다.")
+        print(f"{today.isoformat()} ({slot}): 오늘 이 시간대는 게시 예정이 없습니다.")
         return
 
     image_url = f"{image_base_url}/{post['image']}"
