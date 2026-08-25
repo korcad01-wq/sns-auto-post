@@ -1,7 +1,7 @@
 {
   "_설명": "categories 순서대로 월/수/목/금 오전·오후(하루 2회) 게시마다 로테이션됩니다. 각 카테고리 안 posts는 다시 순서대로 순환됩니다. 새 카테고리/콘텐츠는 posts 배열에 추가하면 자동으로 로테이션에 포함됩니다.",
   "start_date": "2026-08-17",
-  "categories": ["iso", "lab", "risk", "team", "domestic", "audit"],
+  "categories": ["iso", "lab", "risk", "team", "domestic"],
   "posts": {
     "iso": [
       {
