@@ -17,8 +17,12 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      # post_audit_daily.py 가 Instagram 게시 후 같은 내용을 Threads 에도 올린다.
+      # THREADS_* Secrets 가 비어 있으면 Threads 부분만 건너뛴다.
       - run: python post_audit_daily.py
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
           IMAGE_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main
