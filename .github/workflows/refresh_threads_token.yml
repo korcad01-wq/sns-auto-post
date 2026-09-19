@@ -1,0 +1,31 @@
+name: Refresh Threads Token
+
+# Threads 장기 토큰(60일)을 매달 1일·16일에 갱신해 Secrets 에 다시 저장한다.
+# GH_SECRETS_PAT (Secrets 쓰기 권한이 있는 GitHub PAT) 가 없으면 조용히 건너뛴다.
+on:
+  schedule:
+    - cron: '0 1 1,16 * *'   # UTC 01:00 = KST 10:00, 매월 1일·16일
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh long-lived token and update secret
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_SECRETS_PAT }}
+        run: |
+          if [ -z "$THREADS_ACCESS_TOKEN" ] || [ -z "$GH_TOKEN" ]; then
+            echo "THREADS_ACCESS_TOKEN 또는 GH_SECRETS_PAT 가 없어 건너뜁니다."
+            exit 0
+          fi
+          RESP=$(curl -sS "https://graph.threads.net/refresh_access_token?grant_type=th_refresh_token&access_token=${THREADS_ACCESS_TOKEN}")
+          NEW=$(printf '%s' "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('access_token',''))")
+          if [ -z "$NEW" ]; then
+            echo "토큰 갱신 실패 응답:"; printf '%s\n' "$RESP" | sed 's/"access_token":"[^"]*"/"access_token":"***"/'
+            exit 1
+          fi
+          echo "::add-mask::$NEW"
+          gh secret set THREADS_ACCESS_TOKEN --repo "$GITHUB_REPOSITORY" --body "$NEW"
+          echo "토큰 갱신 및 Secrets 저장 완료 (다음 만료: 오늘 + 60일)"
