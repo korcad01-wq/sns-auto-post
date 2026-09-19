@@ -3,6 +3,8 @@ import time
 
 import requests
 
+from threads_client import publish_image, threads_env
+
 GRAPH_API_VERSION = "v26.0"
 
 IMAGE_PATH = "images/audit-consult-sns.png"
@@ -47,18 +49,33 @@ def publish_media(ig_user_id: str, access_token: str, creation_id: str) -> dict:
     return resp.json()
 
 
-def main():
+def post_instagram(image_url: str) -> None:
     ig_user_id = os.environ["IG_USER_ID"]
     access_token = os.environ["IG_ACCESS_TOKEN"]
-    image_base_url = os.environ["IMAGE_BASE_URL"].rstrip("/")
-
-    image_url = f"{image_base_url}/{IMAGE_PATH}"
     print(f"내부심사·경영검토 게시 시작 — 이미지: {image_url}")
-
     creation_id = create_media_container(ig_user_id, access_token, image_url, CAPTION)
     time.sleep(5)
     result = publish_media(ig_user_id, access_token, creation_id)
     print("게시 완료:", result)
+
+
+def main():
+    image_base_url = os.environ["IMAGE_BASE_URL"].rstrip("/")
+    image_url = f"{image_base_url}/{IMAGE_PATH}"
+
+    ig_error = None
+    try:
+        post_instagram(image_url)
+    except Exception as e:  # Instagram 이 실패해도 Threads 는 시도한다
+        ig_error = e
+        print("Instagram 게시 실패:", e)
+
+    env = threads_env()
+    if env is not None:
+        publish_image(env[0], env[1], image_url, CAPTION)
+
+    if ig_error is not None:
+        raise ig_error
 
 
 if __name__ == "__main__":
