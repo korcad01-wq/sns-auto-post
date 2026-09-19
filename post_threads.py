@@ -8,7 +8,7 @@ import os
 from datetime import date
 
 from post_instagram import pick_todays_post
-from threads_client import publish_image, threads_env
+from threads_client import publish_image, threads_env, threads_text
 
 
 def main():
@@ -29,7 +29,8 @@ def main():
         return
 
     image_url = f"{image_base_url}/{post['image']}"
-    publish_image(user_id, token, image_url, post["caption"])
+    text = post.get("threads_caption") or threads_text(post["caption"])
+    publish_image(user_id, token, image_url, text)
 
 
 if __name__ == "__main__":
