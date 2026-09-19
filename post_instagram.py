@@ -6,7 +6,7 @@ from datetime import date, timedelta
 import requests
 
 GRAPH_API_VERSION = "v26.0"
-POSTING_WEEKDAYS = (0, 2, 3, 4)  # 월, 수, 목, 금 (0=월요일)
+POSTING_WEEKDAYS = (0, 1, 2, 3, 4, 5, 6)  # 매일 (0=월요일 … 6=일요일)
 SLOTS_PER_DAY = 2  # 오전(AM) / 오후(PM)
 
 
