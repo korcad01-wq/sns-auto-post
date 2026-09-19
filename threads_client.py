@@ -24,6 +24,14 @@ def threads_env():
     return user_id, token
 
 
+def threads_text(caption: str) -> str:
+    """Instagram 캡션을 Threads 용으로 다듬는다: 해시태그만 있는 줄은 뺀다.
+    (Threads 는 해시태그가 링크로 안 걸리고 남용은 스팸 신호로 본다.)"""
+    lines = [ln for ln in caption.split("\n")
+             if not (ln.strip() and all(w.startswith("#") for w in ln.split()))]
+    return "\n".join(lines).strip()
+
+
 def fit_text(text: str) -> str:
     """500자 초과면 뒤쪽 줄부터 잘라내 맞춘다(해시태그 줄이 먼저 빠진다)."""
     if len(text) <= TEXT_LIMIT:
