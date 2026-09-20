@@ -2,8 +2,9 @@ name: Daily SNS Post
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # UTC 00:00 = KST 09:00 (오전), 매일
-    - cron: '0 6 * * *'  # UTC 06:00 = KST 15:00 (오후), 매일
+    # 정각(:00)은 GitHub 예약 실행이 몰려 3~5시간씩 밀린 기록이 있어 :23 으로 비껴 둠
+    - cron: '23 0 * * *'  # UTC 00:23 = KST 09:23 (오전), 매일
+    - cron: '23 6 * * *'  # UTC 06:23 = KST 15:23 (오후), 매일
   workflow_dispatch:
     inputs:
       slot:
@@ -32,7 +33,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "slot=${{ github.event.inputs.slot }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
+          elif [ "${{ github.event.schedule }}" = "23 0 * * *" ]; then
             echo "slot=AM" >> "$GITHUB_OUTPUT"
           else
             echo "slot=PM" >> "$GITHUB_OUTPUT"
