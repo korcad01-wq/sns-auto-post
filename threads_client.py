@@ -98,3 +98,23 @@ def publish_image(user_id: str, token: str, image_url: str, text: str) -> dict:
     result = publish_container(user_id, token, creation_id)
     print("Threads 게시 완료:", result)
     return result
+
+
+def create_text_container(user_id: str, token: str, text: str) -> str:
+    data = _check(requests.post(f"{THREADS_API}/{user_id}/threads", data={
+        "media_type": "TEXT",
+        "text": fit_text(text),
+        "access_token": token,
+    }))
+    return data["id"]
+
+
+def publish_text(user_id: str, token: str, text: str) -> dict:
+    """텍스트 전용 게시. 본문에 URL 이 있으면 Threads 가 링크 미리보기를 붙인다."""
+    print("Threads 텍스트 게시 시작")
+    creation_id = create_text_container(user_id, token, text)
+    time.sleep(3)
+    wait_until_finished(creation_id, token)
+    result = publish_container(user_id, token, creation_id)
+    print("Threads 게시 완료:", result)
+    return result
