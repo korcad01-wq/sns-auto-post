@@ -2,23 +2,27 @@ name: Daily SNS Post
 
 on:
   schedule:
-    # 정각(:00)은 GitHub 예약 실행이 몰려 3~5시간씩 밀린 기록이 있어 :23 으로 비껴 둠
-    - cron: '23 0 * * *'  # UTC 00:23 = KST 09:23 (오전), 매일
-    - cron: '23 6 * * *'  # UTC 06:23 = KST 15:23 (오후), 매일
+    # 하루 1회. 정각(:00)은 GitHub 예약 실행이 몰려 3~5시간씩 밀린 기록이 있어 :23 으로 비껴 둠
+    - cron: '23 0 * * *'  # UTC 00:23 = KST 09:23, 매일
   workflow_dispatch:
     inputs:
-      slot:
-        description: '수동 실행 시 시간대'
+      date:
+        description: '테스트용 날짜(YYYY-MM-DD). 비우면 오늘'
         required: false
-        default: 'AM'
-        type: choice
-        options:
-          - AM
-          - PM
+        default: ''
+      dry_run:
+        description: '선택 결과만 출력(게시 안 함)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   post:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main
+      POST_DATE: ${{ github.event.inputs.date }}
+      DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,32 +32,16 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Determine slot
-        id: slot
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "slot=${{ github.event.inputs.slot }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "23 0 * * *" ]; then
-            echo "slot=AM" >> "$GITHUB_OUTPUT"
-          else
-            echo "slot=PM" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Post to Instagram
         run: python post_instagram.py
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          IMAGE_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main
-          SLOT: ${{ steps.slot.outputs.slot }}
 
       # Instagram 단계가 실패해도(토큰 만료 등) Threads 는 독립적으로 게시한다.
-      # THREADS_* Secrets 가 비어 있으면 스크립트가 스스로 건너뛴다.
-      - name: Post to Threads (same content)
+      - name: Post to Threads
         if: ${{ !cancelled() }}
         run: python post_threads.py
         env:
           THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
           THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
-          IMAGE_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main
-          SLOT: ${{ steps.slot.outputs.slot }}
