@@ -86,6 +86,22 @@ def resolve_today() -> date:
     return date.fromisoformat(override) if override else date.today()
 
 
+def check_token():
+    """DRY_RUN 때 토큰이 살아 있는지만 확인한다(게시 없음, 토큰 값은 출력하지 않음)."""
+    ig_user_id = os.environ.get("IG_USER_ID", "")
+    token = os.environ.get("IG_ACCESS_TOKEN", "")
+    if not ig_user_id or not token:
+        print("토큰 검사: IG_USER_ID / IG_ACCESS_TOKEN 이 없어 건너뜁니다.")
+        return
+    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}"
+    resp = requests.get(url, params={"fields": "username,media_count", "access_token": token})
+    if resp.status_code >= 400:
+        print("토큰 검사 실패:", resp.text)
+        return
+    data = resp.json()
+    print(f"토큰 검사 OK: @{data.get('username')} (게시물 {data.get('media_count')}건)")
+
+
 def create_media_container(ig_user_id: str, access_token: str, image_url: str, caption: str) -> str:
     url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media"
     resp = requests.post(url, data={
@@ -123,6 +139,7 @@ def main():
     if os.environ.get("DRY_RUN"):
         print("--- caption ---")
         print(post["caption"])
+        check_token()
         return
 
     if not post["image"]:
