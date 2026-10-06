@@ -39,7 +39,7 @@ def main():
         return
     user_id, token = env
 
-    if post["format"] == "question":
+    if post["format"] == "question" or not post.get("image"):
         publish_text(user_id, token, text)
         return
 
