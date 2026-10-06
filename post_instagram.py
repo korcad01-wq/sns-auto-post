@@ -37,6 +37,24 @@ def pick_todays_post(calendar: dict, today: date):
     variant = d // (len(formats) * len(categories))
     topic = calendar["posts"][category]
 
+    if fmt == "giveaway":
+        # 2026-10-06: 자료 배포형. 쓰레드 전자책의 성장 엔진(정보성 글 + 댓글 단 사람에게 자료 보내기).
+        # giveaway 가 있는 주제만 돌린다. 민감 주제(가지급금·차명주식 등)에는 두지 않는다.
+        gcats = [c for c in categories if calendar["posts"][c].get("giveaway")]
+        if gcats:
+            gcat = gcats[(d // len(formats)) % len(gcats)]
+            items = calendar["posts"][gcat]["giveaway"]
+            item = items[(d // (len(formats) * len(gcats))) % len(items)]
+            return {
+                "format": "giveaway", "category": gcat,
+                "image": item.get("image"),
+                "caption": item["text"] + "\n\n" + calendar["posts"][gcat].get("hashtags", ""),
+                "threads_text": item["text"],
+                "blog": item.get("blog", calendar["posts"][gcat].get("blog", "")),
+                "asset": item.get("asset", ""),
+            }
+        fmt = "question"
+
     if fmt == "case":
         cases = calendar.get("cases") or []
         if cases:
