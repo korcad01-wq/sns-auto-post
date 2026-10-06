@@ -1,10 +1,10 @@
 {
-  "_설명": "v2 (2026-10-03~). 매일 1회(KST 09:23). 하루 index d = 시작일부터 경과일. 형식 = formats[d % 3] (card 체크리스트 카드 / question 질문형 텍스트 / case 현장 사례), 주제 = categories[d % 20], 같은 주제·형식의 변형 = (d // 60) % 2. question 은 Threads 텍스트 전용(블로그 링크 미리보기), Instagram 은 네이비 텍스트 카드(images/q-*.png). case 는 cases 배열에서 (d // 3) % len 번째를 쓰고, 비어 있으면 그 주제의 다른 question 으로 대체. CTA 는 모두 DM/프로필 전화(사적 경로). 공개 댓글 CTA 금지. 수치 근거: threads/THREADS_주제별_근거.md. 이전 버전: threads/_구버전/content_calendar_2026-09-19.json.",
+  "_설명": "v2 (2026-10-03~). 매일 1회(KST 09:23). 하루 index d = 시작일부터 경과일. 형식 = formats[d % 3] (card 체크리스트 카드 / question 질문형 텍스트 / giveaway 자료 배포), 주제 = categories[d % 20], 같은 주제·형식의 변형 = (d // 60) % 2. question 은 Threads 텍스트 전용(블로그 링크 미리보기), Instagram 은 네이비 텍스트 카드(images/q-*.png). case 는 cases 배열에서 (d // 3) % len 번째를 쓰고, 비어 있으면 그 주제의 다른 question 으로 대체. CTA 는 모두 DM/프로필 전화(사적 경로). 공개 댓글 CTA 금지. 수치 근거: threads/THREADS_주제별_근거.md. 이전 버전: threads/_구버전/content_calendar_2026-09-19.json. | 2026-10-06 v2.1: 형식 3번째를 case→giveaway(자료 배포형)로 교체. giveaway 는 posts[cat].giveaway 가 있는 주제(risk·fund·venture·iso)만 순환하며, CTA 는 '댓글에 키워드' → 사람이 DM 으로 docs/*.pdf 링크를 보낸다(쓰레드 전자책 5부 방식). 민감 주제는 그대로 DM 전용. case 는 cases 가 채워지면 formats 에 다시 넣는다.",
   "start_date": "2026-10-03",
   "formats": [
     "card",
     "question",
-    "case"
+    "giveaway"
   ],
   "categories": [
     "iso",
@@ -54,6 +54,15 @@
           "image": "images/q-iso-2.png",
           "text": "입찰 공고에서 인증서가 '참가자격' 칸에 있는지 '가산점' 칸에 있는지 보신 적 있으신가요?\n\n참가자격에 있으면 없을 때 응찰 자체가 안 되고, 가산점에 있으면 없어도 응찰은 됩니다. ISO는 물품 입찰엔 가점이 없고, 10억 이상 공사 입찰에선 ISO 45001만 가점입니다. 여성·장애인기업 확인서는 둘 다에서 점수가 붙습니다.\n\n우리 회사가 노리는 공고에 뭐가 필요한지 궁금하시면 DM으로 공고명과 업종만 보내주세요."
         }
+      ],
+      "giveaway": [
+        {
+          "image": "images/g-iso.png",
+          "keyword": "자가점검",
+          "asset": "docs/iso_selfcheck.pdf",
+          "text": "ISO 심사에서 서로 다른 3개 사업장이 똑같은 문구로 지적받은 항목이 뭔지 아세요?\n\n3정5S 점검 주기입니다. 서류가 없어서가 아니라 기록이 멈춰서 걸립니다. 측정장비 목록 빈칸, 공급자 재평가 주기, 위험성평가 갱신 이력도 같은 자리입니다.\n\n저희가 보유한 부적합보고서의 실제 지적 10개를 체크표로 만들었습니다(PDF 1쪽).\n\n댓글에 '자가점검'이라고만 남겨 주세요. DM으로 보내드립니다.",
+          "blog": "https://blog.naver.com/korcad1127/224426119502"
+        }
       ]
     },
     "venture": {
@@ -80,6 +89,15 @@
           "image": "images/q-venture-2.png",
           "text": "투자 못 받았으니 벤처는 안 되겠지, 하고 넘기신 분 계신가요?\n\n벤처 확인은 세 가지 길이 있습니다. 투자, 연구개발, 혁신성장. 투자가 없어도 두 가지 길이 남습니다.\n\n연구개발비 지출이 있거나 기술이 있다면 DM으로 회사명만 보내주세요. 어느 유형이 가능한지 봐드립니다."
         }
+      ],
+      "giveaway": [
+        {
+          "image": "images/g-venture.png",
+          "keyword": "벤처",
+          "asset": "docs/venture_benefit.pdf",
+          "text": "벤처확인 받으면 취득세가 75% 깎이는 거 아세요?\n\n창업 3년 안에 확인받은 회사는 소득세·법인세 5년간 50%, 취득세 75%, 재산세 3년 면제 뒤 2년 50%입니다. 법 조문으로 다시 확인했더니 가이드북 숫자 하나가 옛날 것이었습니다.\n\n감면율·기간·추징 요건을 조문 번호와 함께 한 장에 정리했습니다(PDF 1쪽).\n\n댓글에 '벤처'라고만 남겨 주세요. DM으로 보내드립니다.",
+          "blog": "https://blog.naver.com/korcad1127/224419019561"
+        }
       ]
     },
     "fund": {
@@ -105,6 +123,15 @@
         {
           "image": "images/q-fund-2.png",
           "text": "은행 대출과 정책자금, 뭐가 다른지 한 줄로 설명하면요.\n\n은행은 담보와 신용을 보고, 정책자금은 기업의 단계와 조건을 봅니다. 그래서 은행에서 안 된 회사가 정책자금은 되는 경우가 있습니다.\n\n우리 회사가 어느 쪽인지 궁금하시면 DM으로 업종과 업력만 알려주세요."
+        }
+      ],
+      "giveaway": [
+        {
+          "image": "images/g-fund.png",
+          "keyword": "자가진단",
+          "asset": "docs/fund_selfcheck.pdf",
+          "text": "정책자금 신청했다가 서류만 내고 돌아온 적 있으신가요?\n\n2026년 공고에서 재무로 걸리는 줄은 다섯 개뿐입니다. 부채비율, 이자보상배율 3년 연속, 자본잠식, 신용위험등급, 우량기업 기준. 업력 7년 미만이면 부채비율은 아예 안 봅니다.\n\n이 다섯 줄을 우리 회사 숫자로 채워 보는 자가진단표(PDF 1쪽)를 만들었습니다.\n\n댓글에 '자가진단'이라고만 남겨 주세요. DM으로 보내드립니다.",
+          "blog": "https://blog.naver.com/korcad1127/224419798077"
         }
       ]
     },
@@ -209,6 +236,15 @@
         {
           "image": "images/q-risk-2.png",
           "text": "위험성평가, 의무라서 하는 것과 인정까지 받는 것은 다릅니다.\n\n50명 미만 제조업이 인정 사업장이 되면 산재보험료가 3년간 내려갑니다. 같은 일을 하고 혜택을 안 받는 회사가 많습니다.\n\n인원과 업종만 DM으로 보내주시면 인정 대상인지 알려드립니다."
+        }
+      ],
+      "giveaway": [
+        {
+          "image": "images/g-risk.png",
+          "keyword": "체크리스트",
+          "asset": "docs/risk_checklist19.pdf",
+          "text": "위험성평가, 올해 6월부터 서류만 있으면 안 되는 거 아시나요?\n\n근로자가 참여하고, 결과를 알리고, 기록을 3년 남겨야 인정됩니다. 소규모 사업장은 체크리스트법이 제일 빠른데, 평가항목 19종에 우리 설비명을 적어야 평가로 칩니다.\n\n19종 항목표에 '우리 설비명' 칸과 6월 개정 요건 5줄을 넣은 자가점검표(PDF 2쪽)를 만들었습니다.\n\n댓글에 '체크리스트'라고만 남겨 주세요. DM으로 보내드립니다.",
+          "blog": "https://blog.naver.com/korcad1127/224416770831"
         }
       ]
     },
@@ -552,5 +588,6 @@
     }
   },
   "cases": [],
-  "_사례형_작성법": "실제 상담·심사 건만. 업체 실명·지역 특정 금지, 고객 동의된 사진만. 수치는 실제 값만(창작 금지). 형식: {\"image\": \"images/case-YYYYMMDD.png\", \"caption\": \"<현장 1~2문장>\\n\\n<무엇을 했고 무엇이 달라졌는지 2~3문장>\\n\\n<DM CTA>\\n\\n<해시태그>\", \"blog\": \"(선택) 관련 블로그 글 URL\"}. 자세한 요령은 SNS 업로드/사례형_게시물_작성법.md"
+  "_사례형_작성법": "실제 상담·심사 건만. 업체 실명·지역 특정 금지, 고객 동의된 사진만. 수치는 실제 값만(창작 금지). 형식: {\"image\": \"images/case-YYYYMMDD.png\", \"caption\": \"<현장 1~2문장>\\n\\n<무엇을 했고 무엇이 달라졌는지 2~3문장>\\n\\n<DM CTA>\\n\\n<해시태그>\", \"blog\": \"(선택) 관련 블로그 글 URL\"}. 자세한 요령은 SNS 업로드/사례형_게시물_작성법.md",
+  "giveaway_assets_base": "https://raw.githubusercontent.com/korcad01-wq/sns-auto-post/main/"
 }
