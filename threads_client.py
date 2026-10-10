@@ -118,3 +118,62 @@ def publish_text(user_id: str, token: str, text: str) -> dict:
     result = publish_container(user_id, token, creation_id)
     print("Threads 게시 완료:", result)
     return result
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-10 v3 추가: 내 글 조회 · 답글 읽기 · 답글 쓰기 (threads_read_replies / threads_manage_replies)
+# ---------------------------------------------------------------------------
+
+def recent_posts(user_id: str, token: str, limit: int = 10) -> list:
+    """내 최근 글 목록. [{id, text, timestamp(UTC ISO), media_type, permalink}]"""
+    data = _check(requests.get(f"{THREADS_API}/{user_id}/threads", params={
+        "fields": "id,text,timestamp,media_type,permalink",
+        "limit": limit,
+        "access_token": token,
+    }))
+    return data.get("data", [])
+
+
+def already_posted_today(user_id: str, token: str, first_line: str, today_kst) -> bool:
+    """오늘(KST) 같은 첫 줄로 시작하는 글이 이미 있으면 True.
+    로컬 스케줄러와 GitHub cron 이 둘 다 돌아도 하루 한 번만 올라가게 막는다."""
+    from datetime import datetime, timedelta, timezone
+    kst = timezone(timedelta(hours=9))
+    key = first_line.strip()[:20]
+    for p in recent_posts(user_id, token, limit=8):
+        ts = datetime.fromisoformat(p["timestamp"].replace("+0000", "+00:00")).astimezone(kst)
+        if ts.date() == today_kst and (p.get("text") or "").strip()[:20] == key:
+            return True
+    return False
+
+
+def list_replies(media_id: str, token: str) -> list:
+    """글에 달린 1단계 답글. [{id, text, username, timestamp, hide_status}] (내 답글 포함)"""
+    out, after = [], None
+    while True:
+        params = {"fields": "id,text,username,timestamp,hide_status,is_reply_owned_by_me",
+                  "access_token": token, "limit": 50}
+        if after:
+            params["after"] = after
+        data = _check(requests.get(f"{THREADS_API}/{media_id}/replies", params=params))
+        out.extend(data.get("data", []))
+        after = data.get("paging", {}).get("cursors", {}).get("after")
+        if not after or not data.get("data"):
+            break
+    return out
+
+
+def publish_reply(user_id: str, token: str, reply_to_id: str, text: str) -> dict:
+    """내 글 또는 다른 사람 답글에 텍스트 답글을 단다."""
+    data = _check(requests.post(f"{THREADS_API}/{user_id}/threads", data={
+        "media_type": "TEXT",
+        "text": fit_text(text),
+        "reply_to_id": reply_to_id,
+        "access_token": token,
+    }))
+    creation_id = data["id"]
+    time.sleep(3)
+    wait_until_finished(creation_id, token)
+    result = publish_container(user_id, token, creation_id)
+    print("Threads 답글 완료:", result)
+    return result
