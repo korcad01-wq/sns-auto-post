@@ -51,6 +51,7 @@ def pick_todays_post(calendar: dict, today: date):
         gcats = [c for c in categories if calendar["posts"][c].get("giveaway")]
         if gcats:
             step = (d // 7) if schedule else (d // len(formats))
+            step += int(calendar.get("giveaway_offset", 0))  # 직전 v2.1 에서 이미 나간 자료를 바로 반복하지 않게 순서를 민다
             gcat = gcats[step % len(gcats)]
             items = calendar["posts"][gcat]["giveaway"]
             item = items[(step // len(gcats)) % len(items)]
