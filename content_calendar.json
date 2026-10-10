@@ -1,5 +1,5 @@
 {
-  "_설명": "v3 (2026-10-13~). 쓰레드 자동화 전자책(로고드) 규칙 반영. 요일 스케줄: 월 question(B 답할 자격형) · 화 giveaway(D 자료 주는 글) · 수 card(C 반전형) · 목 question · 금 card · 토·일 쉼(사용자가 직접 올리는 현장·일상 글 자리). 주제 = categories[d % 20] (d = start_date 부터 경과일), 변형 = (d // 20) % 2. giveaway 는 주(d // 7)마다 gcats 순환 → 같은 자료는 4주에 1회. Threads 본문은 각 항목의 'threads' (3~5줄, 첫 줄에 내가, 소제목·번호·링크·해시태그 없음, 전문용어 2개 이하). Instagram 은 기존 caption/image 그대로. 게시 시각 KST 21:00 전후(로컬 작업 스케줄러 21:00 + GitHub cron 21:23 백업, 중복 게시 방지는 API 로 오늘 글 확인). 민감 주제(advance/corp/inheritance/retained/capital/borrowed)는 DM 전용 CTA 유지. 수치 근거: threads/THREADS_주제별_근거.md. | 이전: v2.1(2026-10-06) 3형식 매일 순환, 백업 content_calendar.bak_20261010.json",
+  "_설명": "v3 (2026-10-13~). 쓰레드 자동화 전자책(로고드) 규칙 반영. 요일 스케줄: 월 question(B 답할 자격형) · 화 giveaway(D 자료 주는 글) · 수 card(C 반전형) · 목 question · 금 card · 토·일 쉼(사용자가 직접 올리는 현장·일상 글 자리). 주제 = categories[d % 20] (d = start_date 부터 경과일), 변형 = (d // 20) % 2. giveaway 는 주(d // 7)마다 gcats 순환 → 같은 자료는 4주에 1회. Threads 본문은 각 항목의 'threads' (3~5줄, 첫 줄에 내가, 소제목·번호·링크·해시태그 없음, 전문용어 2개 이하). Instagram 은 기존 caption/image 그대로. 게시 시각 KST 21:00 전후(로컬 작업 스케줄러 21:00 + GitHub cron 21:23 백업, 중복 게시 방지는 API 로 오늘 글 확인). 민감 주제(advance/corp/inheritance/retained/capital/borrowed)는 DM 전용 CTA 유지. 수치 근거: threads/THREADS_주제별_근거.md. | 이전: v2.1(2026-10-06) 3형식 매일 순환, 백업 content_calendar.bak_20261010.json | giveaway_offset=1: 10-08 에 venture 자료가 나갔으므로 10-13 은 fund 부터(fund→risk→iso→venture, 4주 주기).",
   "start_date": "2026-10-03",
   "formats": [
     "card",
@@ -688,5 +688,6 @@
   },
   "cases": [],
   "_사례형_작성법": "실제 상담·심사 건만. 업체 실명·지역 특정 금지, 고객 동의된 사진만. 수치는 실제 값만(창작 금지). 형식: {\"image\": \"images/case-YYYYMMDD.png\", \"caption\": \"<현장 1~2문장>\\n\\n<무엇을 했고 무엇이 달라졌는지 2~3문장>\\n\\n<DM CTA>\\n\\n<해시태그>\", \"blog\": \"(선택) 관련 블로그 글 URL\"}. 자세한 요령은 SNS 업로드/사례형_게시물_작성법.md",
-  "giveaway_assets_base": "https://raw.githubusercontent.com/korcad01-wq/sns-auto-post/main/"
+  "giveaway_assets_base": "https://raw.githubusercontent.com/korcad01-wq/sns-auto-post/main/",
+  "giveaway_offset": 1
 }
