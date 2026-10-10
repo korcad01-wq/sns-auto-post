@@ -2,8 +2,10 @@ name: Daily SNS Post
 
 on:
   schedule:
-    # 하루 1회. 정각(:00)은 GitHub 예약 실행이 몰려 3~5시간씩 밀린 기록이 있어 :23 으로 비껴 둠
-    - cron: '23 0 * * *'  # UTC 00:23 = KST 09:23, 매일
+    # v3 (2026-10-10): 밤 9시 전후 게시(쓰레드 전자책 실측 — 1만 회 넘긴 글은 전부 20~22시 발행).
+    # 1차 트리거는 로컬 작업 스케줄러 「SNS 저녁 게시 (21:00)」 의 workflow_dispatch, 이 cron 은 PC 가 꺼진 날의 백업.
+    # 둘 다 돌아도 스크립트가 "오늘 같은 글" 을 API 로 확인해 한 번만 올린다. 정각은 GitHub 예약이 몰려 밀리므로 :23.
+    - cron: '23 12 * * 1-5'  # UTC 12:23 = KST 21:23, 월~금 (토·일은 content_calendar.json schedule 에서 쉼)
   workflow_dispatch:
     inputs:
       date:
