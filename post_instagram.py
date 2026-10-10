@@ -32,24 +32,34 @@ def pick_todays_post(calendar: dict, today: date):
 
     formats = calendar.get("formats", ["card", "question", "case"])
     categories = calendar["categories"]
-    fmt = formats[d % len(formats)]
+    schedule = calendar.get("schedule")  # v3: 요일별 형식. 값이 None 인 요일은 쉰다
+    if schedule:
+        fmt = schedule.get(["mon", "tue", "wed", "thu", "fri", "sat", "sun"][today.weekday()])
+        if not fmt:
+            return None
+        variant = (d // len(categories)) % 2
+    else:
+        fmt = formats[d % len(formats)]
+        variant = d // (len(formats) * len(categories))
     category = categories[d % len(categories)]
-    variant = d // (len(formats) * len(categories))
     topic = calendar["posts"][category]
 
     if fmt == "giveaway":
         # 2026-10-06: 자료 배포형. 쓰레드 전자책의 성장 엔진(정보성 글 + 댓글 단 사람에게 자료 보내기).
         # giveaway 가 있는 주제만 돌린다. 민감 주제(가지급금·차명주식 등)에는 두지 않는다.
+        # v3: 주(d // 7) 단위로 순환 → 같은 자료는 자료 개수 × 1주 만에 한 번 (전자책: 같은 자료 재배포 금지)
         gcats = [c for c in categories if calendar["posts"][c].get("giveaway")]
         if gcats:
-            gcat = gcats[(d // len(formats)) % len(gcats)]
+            step = (d // 7) if schedule else (d // len(formats))
+            gcat = gcats[step % len(gcats)]
             items = calendar["posts"][gcat]["giveaway"]
-            item = items[(d // (len(formats) * len(gcats))) % len(items)]
+            item = items[(step // len(gcats)) % len(items)]
             return {
                 "format": "giveaway", "category": gcat,
                 "image": item.get("image"),
                 "caption": item["text"] + "\n\n" + calendar["posts"][gcat].get("hashtags", ""),
-                "threads_text": item["text"],
+                "threads_text": item.get("threads") or item["text"],
+                "reply": item.get("reply", ""),
                 "blog": item.get("blog", calendar["posts"][gcat].get("blog", "")),
                 "asset": item.get("asset", ""),
             }
@@ -73,7 +83,9 @@ def pick_todays_post(calendar: dict, today: date):
         return {
             "format": "card", "category": category,
             "image": item["image"], "caption": item["caption"],
-            "threads_text": _strip_hashtags(item["caption"]),
+            # v3: Threads 는 'threads'(반전형 3~4줄) 를 쓴다. 없으면 캡션에서 해시태그만 뺀 것
+            "threads_text": item.get("threads") or _strip_hashtags(item["caption"]),
+            "reply": item.get("reply", ""),
             "blog": topic.get("blog", ""),
         }
 
@@ -83,7 +95,8 @@ def pick_todays_post(calendar: dict, today: date):
         "format": "question", "category": category,
         "image": item.get("image"),  # Instagram 용 텍스트 카드. Threads 는 텍스트 전용으로 올린다
         "caption": item["text"] + "\n\n" + topic.get("hashtags", ""),
-        "threads_text": item["text"],
+        "threads_text": item.get("threads") or item["text"],
+        "reply": item.get("reply", ""),
         "blog": topic.get("blog", ""),
     }
 
@@ -120,6 +133,23 @@ def check_token():
     print(f"토큰 검사 OK: @{data.get('username')} (게시물 {data.get('media_count')}건)")
 
 
+def ig_already_posted_today(ig_user_id: str, access_token: str, caption: str, today: date) -> bool:
+    """오늘(KST) 같은 첫 줄의 게시물이 이미 있으면 True (로컬 스케줄러 + GitHub cron 중복 방지)."""
+    from datetime import datetime, timedelta, timezone
+    kst = timezone(timedelta(hours=9))
+    key = caption.strip().split("\n")[0][:20]
+    url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media"
+    resp = requests.get(url, params={"fields": "caption,timestamp", "limit": 8, "access_token": access_token})
+    if resp.status_code >= 400:
+        print("Instagram 최근 게시물 조회 실패(중복 검사 생략):", resp.text[:200])
+        return False
+    for m in resp.json().get("data", []):
+        ts = datetime.fromisoformat(m["timestamp"].replace("+0000", "+00:00")).astimezone(kst)
+        if ts.date() == today and (m.get("caption") or "").strip()[:20] == key:
+            return True
+    return False
+
+
 def create_media_container(ig_user_id: str, access_token: str, image_url: str, caption: str) -> str:
     url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media"
     resp = requests.post(url, data={
@@ -150,7 +180,7 @@ def main():
     today = resolve_today()
     post = pick_todays_post(calendar, today)
     if post is None:
-        print(f"{today.isoformat()}: 시작일 이전이라 게시하지 않습니다.")
+        print(f"{today.isoformat()}: 시작일 이전이거나 쉬는 요일이라 게시하지 않습니다.")
         return
 
     print(f"{today.isoformat()} 선택: {post['format']} / {post['category']} / 이미지 {post['image']}")
@@ -168,6 +198,10 @@ def main():
     access_token = os.environ["IG_ACCESS_TOKEN"]
     image_base_url = os.environ["IMAGE_BASE_URL"].rstrip("/")
     image_url = f"{image_base_url}/{post['image']}"
+
+    if ig_already_posted_today(ig_user_id, access_token, post["caption"], today):
+        print("Instagram: 오늘 같은 글이 이미 올라가 있어 건너뜁니다(중복 방지).")
+        return
 
     print(f"게시 시작 — 이미지: {image_url}")
     creation_id = create_media_container(ig_user_id, access_token, image_url, post["caption"])
