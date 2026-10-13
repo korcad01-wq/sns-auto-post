@@ -12,7 +12,7 @@ import os
 import re
 import time
 
-from post_instagram import load_calendar, pick_todays_post, resolve_today
+from post_instagram import is_late_run, load_calendar, pick_todays_post, resolve_today
 from threads_client import (already_posted_today, fit_text, publish_image, publish_reply,
                             publish_text, threads_env)
 
@@ -59,6 +59,9 @@ def main():
             print("--- first reply ---")
             print(post["reply"])
         print("검사:", "통과" if not problems else problems)
+        return
+    if is_late_run():
+        print("Threads: KST 정오 전 실행(밀린 예약)이라 게시하지 않습니다.")
         return
     if problems:
         print("Threads: 발행 직전 검사에 걸려 게시하지 않습니다:", problems)
