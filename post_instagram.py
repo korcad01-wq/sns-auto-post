@@ -113,9 +113,23 @@ def load_calendar() -> dict:
         return json.load(f)
 
 
+def _now_kst():
+    from datetime import datetime, timedelta, timezone
+    return datetime.now(timezone(timedelta(hours=9)))
+
+
 def resolve_today() -> date:
+    # GitHub 러너는 UTC 라 date.today() 를 쓰면 KST 00~09시에 '어제'가 된다.
+    # 2026-10-13: 늦게 돈 월요일 실행 2건(06:18·08:13 KST)이 둘 다 10-12 글을 골랐고,
+    # 중복 검사는 KST 날짜(10-13)로 비교해 통과 → 같은 글이 두 번 올라갔다.
     override = os.environ.get("POST_DATE", "").strip()
-    return date.fromisoformat(override) if override else date.today()
+    return date.fromisoformat(override) if override else _now_kst().date()
+
+
+def is_late_run() -> bool:
+    """KST 정오 전 실행이면 True. 21시 게시가 밤사이 밀렸거나(GitHub cron 지연),
+    PC 가 꺼져 있다 아침에 켜지며 놓친 예약이 돈 경우라 게시하지 않는다. POST_DATE 지정 시는 예외."""
+    return not os.environ.get("POST_DATE", "").strip() and _now_kst().hour < 12
 
 
 def check_token():
@@ -189,6 +203,10 @@ def main():
         print("--- caption ---")
         print(post["caption"])
         check_token()
+        return
+
+    if is_late_run():
+        print("Instagram: KST 정오 전 실행(밀린 예약)이라 게시하지 않습니다.")
         return
 
     if not post["image"]:
