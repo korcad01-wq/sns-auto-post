@@ -1,0 +1,26 @@
+name: IG Insights
+
+# 읽기 전용: Instagram 계정·게시물 지표를 로그로 출력한다(게시 없음). 수동 실행만.
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: '이 날짜(YYYY-MM-DD) 이후 게시물'
+        required: false
+        default: '2026-06-01'
+
+jobs:
+  insights:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Read Instagram insights
+        run: python ig_insights.py
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          SINCE: ${{ github.event.inputs.since }}
