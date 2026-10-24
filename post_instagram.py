@@ -11,6 +11,10 @@
   IG_USER_ID, IG_ACCESS_TOKEN, IMAGE_BASE_URL  (필수)
   POST_DATE=YYYY-MM-DD   테스트용 날짜 덮어쓰기
   DRY_RUN=1              선택 결과만 출력하고 게시하지 않음
+  CONTAINER_TEST=1       영상 게시물의 컨테이너만 만들어 처리 완료를 확인하고 게시하지 않음
+
+특별 게시물(2026-10-24~): calendar["specials"]["YYYY-MM-DD"] 이 있으면 그날은 로테이션 대신 그것을 올린다.
+  video 가 있으면 Instagram 은 릴스, Threads 는 영상 글로 나간다.
 """
 import json
 import os
@@ -25,6 +29,18 @@ GRAPH_API_VERSION = "v26.0"
 def pick_todays_post(calendar: dict, today: date):
     """오늘 게시물을 정규화한 dict 로 돌려준다.
     {"format", "category", "image"(없으면 None), "caption", "threads_text", "blog"}"""
+    # 2026-10-24: 날짜를 정해 둔 특별 게시물(릴스 영상 등). 그날의 로테이션 글 대신 나가고 쉬는 요일보다 우선한다
+    special = (calendar.get("specials") or {}).get(today.isoformat())
+    if special:
+        return {
+            "format": special.get("format", "reel"), "category": special.get("category", ""),
+            "image": special.get("image"), "video": special.get("video"), "cover": special.get("cover"),
+            "caption": special["caption"],
+            "threads_text": special.get("threads") or _strip_hashtags(special["caption"]),
+            "reply": special.get("reply", ""),
+            "blog": special.get("blog", ""),
+        }
+
     start = date.fromisoformat(calendar["start_date"])
     d = (today - start).days
     if d < 0:
@@ -190,6 +206,63 @@ def publish_media(ig_user_id: str, access_token: str, creation_id: str) -> dict:
     return resp.json()
 
 
+def create_reel_container(ig_user_id: str, access_token: str, video_url: str, caption: str, cover_url: str = "") -> str:
+    data = {
+        "media_type": "REELS",
+        "video_url": video_url,
+        "caption": caption,
+        "share_to_feed": "true",
+        "access_token": access_token,
+    }
+    if cover_url:
+        data["cover_url"] = cover_url
+    resp = requests.post(f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media", data=data)
+    if resp.status_code >= 400:
+        print("Meta API 에러 응답:", resp.text)
+    resp.raise_for_status()
+    return resp.json()["id"]
+
+
+def wait_reel_finished(container_id: str, access_token: str, timeout: int = 600) -> None:
+    """영상은 Instagram 이 내려받아 인코딩하는 데 수십 초~수 분 걸린다. status_code 가 FINISHED 일 때만 게시할 수 있다."""
+    deadline = time.time() + timeout
+    while True:
+        resp = requests.get(f"https://graph.facebook.com/{GRAPH_API_VERSION}/{container_id}",
+                            params={"fields": "status_code,status", "access_token": access_token})
+        if resp.status_code >= 400:
+            print("Meta API 에러 응답:", resp.text)
+        resp.raise_for_status()
+        data = resp.json()
+        code = data.get("status_code")
+        if code == "FINISHED":
+            return
+        if code in ("ERROR", "EXPIRED"):
+            raise RuntimeError(f"Instagram 릴스 컨테이너 실패: {data}")
+        if time.time() > deadline:
+            raise TimeoutError(f"Instagram 릴스 처리 대기 초과: {data}")
+        print(f"Instagram: 릴스 처리 중 {code} … 10초 후 재확인")
+        time.sleep(10)
+
+
+def post_reel(post: dict, today: date) -> None:
+    ig_user_id = os.environ["IG_USER_ID"]
+    access_token = os.environ["IG_ACCESS_TOKEN"]
+    base = os.environ["IMAGE_BASE_URL"].rstrip("/")
+    video_url = f"{base}/{post['video']}"
+    cover_url = f"{base}/{post['cover']}" if post.get("cover") else ""
+    test = bool(os.environ.get("CONTAINER_TEST"))
+    if not test and ig_already_posted_today(ig_user_id, access_token, post["caption"], today):
+        print("Instagram: 오늘 같은 글이 이미 올라가 있어 건너뜁니다(중복 방지).")
+        return
+    print(f"릴스 게시 시작 — 영상: {video_url}")
+    creation_id = create_reel_container(ig_user_id, access_token, video_url, post["caption"], cover_url)
+    wait_reel_finished(creation_id, access_token)
+    if test:
+        print("Instagram: 컨테이너 처리 완료(FINISHED). CONTAINER_TEST 라 게시하지 않습니다.")
+        return
+    print("게시 완료:", publish_media(ig_user_id, access_token, creation_id))
+
+
 def main():
     calendar = load_calendar()
     today = resolve_today()
@@ -198,7 +271,15 @@ def main():
         print(f"{today.isoformat()}: 시작일 이전이거나 쉬는 요일이라 게시하지 않습니다.")
         return
 
-    print(f"{today.isoformat()} 선택: {post['format']} / {post['category']} / 이미지 {post['image']}")
+    print(f"{today.isoformat()} 선택: {post['format']} / {post['category']} / "
+          f"{'영상 ' + post['video'] if post.get('video') else '이미지 ' + str(post['image'])}")
+    if os.environ.get("CONTAINER_TEST"):
+        # 영상이 실제로 처리되는지 확인만 한다. 게시는 하지 않는다
+        if post.get("video"):
+            post_reel(post, today)
+        else:
+            print("CONTAINER_TEST: 이 날짜 게시물은 영상이 아니라 시험할 것이 없습니다.")
+        return
     if os.environ.get("DRY_RUN"):
         print("--- caption ---")
         print(post["caption"])
@@ -207,6 +288,10 @@ def main():
 
     if is_late_run():
         print("Instagram: KST 정오 전 실행(밀린 예약)이라 게시하지 않습니다.")
+        return
+
+    if post.get("video"):
+        post_reel(post, today)
         return
 
     if not post["image"]:
