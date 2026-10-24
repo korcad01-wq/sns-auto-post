@@ -14,7 +14,7 @@ import time
 
 from post_instagram import is_late_run, load_calendar, pick_todays_post, resolve_today
 from threads_client import (already_posted_today, fit_text, publish_image, publish_reply,
-                            publish_text, threads_env)
+                            publish_text, publish_video, threads_env)
 
 
 def build_text(post: dict, calendar: dict) -> str:
@@ -60,6 +60,14 @@ def main():
             print(post["reply"])
         print("검사:", "통과" if not problems else problems)
         return
+    if os.environ.get("CONTAINER_TEST"):
+        env = threads_env()
+        if env and post.get("video"):
+            publish_video(*env, f"{os.environ['IMAGE_BASE_URL'].rstrip('/')}/{post['video']}", text, publish=False)
+        else:
+            print("CONTAINER_TEST: 영상 게시물이 아니거나 토큰이 없어 시험할 것이 없습니다.")
+        print("검사:", "통과" if not problems else problems)
+        return
     if is_late_run():
         print("Threads: KST 정오 전 실행(밀린 예약)이라 게시하지 않습니다.")
         return
@@ -76,7 +84,9 @@ def main():
         print("Threads: 오늘 같은 글이 이미 올라가 있어 건너뜁니다(중복 방지).")
         return
 
-    if post["format"] == "giveaway" and post.get("image"):
+    if post.get("video"):
+        result = publish_video(user_id, token, f"{os.environ['IMAGE_BASE_URL'].rstrip('/')}/{post['video']}", text)
+    elif post["format"] == "giveaway" and post.get("image"):
         image_base_url = os.environ["IMAGE_BASE_URL"].rstrip("/")
         result = publish_image(user_id, token, f"{image_base_url}/{post['image']}", text)
     else:
