@@ -63,9 +63,9 @@ def create_image_container(user_id: str, token: str, image_url: str, text: str) 
     return data["id"]
 
 
-def wait_until_finished(container_id: str, token: str) -> None:
+def wait_until_finished(container_id: str, token: str, timeout: int = CONTAINER_TIMEOUT) -> None:
     """이미지 처리는 비동기라 status 가 FINISHED 될 때까지 기다린다."""
-    deadline = time.time() + CONTAINER_TIMEOUT
+    deadline = time.time() + timeout
     while True:
         data = _check(requests.get(f"{THREADS_API}/{container_id}", params={
             "fields": "status,error_message",
@@ -95,6 +95,26 @@ def publish_image(user_id: str, token: str, image_url: str, text: str) -> dict:
     creation_id = create_image_container(user_id, token, image_url, text)
     time.sleep(10)  # 공식 권장 대기(평균 30초)의 일부. 이후 status 폴링으로 보완
     wait_until_finished(creation_id, token)
+    result = publish_container(user_id, token, creation_id)
+    print("Threads 게시 완료:", result)
+    return result
+
+
+def publish_video(user_id: str, token: str, video_url: str, text: str, publish: bool = True) -> dict:
+    """영상 1개 + 본문. 2026-10-24 시험에서 30초 영상(1.6MB)은 약 25초 만에 FINISHED 가 됐다.
+    publish=False 면 컨테이너 처리까지만 확인하고 게시하지 않는다."""
+    print(f"Threads 영상 게시 시작 — 영상: {video_url}")
+    creation_id = _check(requests.post(f"{THREADS_API}/{user_id}/threads", data={
+        "media_type": "VIDEO",
+        "video_url": video_url,
+        "text": fit_text(text),
+        "access_token": token,
+    }))["id"]
+    time.sleep(10)
+    wait_until_finished(creation_id, token, timeout=600)
+    if not publish:
+        print("Threads: 영상 컨테이너 처리 완료(FINISHED). 게시하지 않습니다.")
+        return {}
     result = publish_container(user_id, token, creation_id)
     print("Threads 게시 완료:", result)
     return result
