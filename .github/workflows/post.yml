@@ -17,6 +17,11 @@ on:
         required: false
         default: false
         type: boolean
+      container_test:
+        description: '영상 게시물의 컨테이너 처리만 확인(게시 안 함). date 와 함께 쓴다'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   post:
@@ -25,6 +30,7 @@ jobs:
       IMAGE_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/main
       POST_DATE: ${{ github.event.inputs.date }}
       DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
+      CONTAINER_TEST: ${{ github.event.inputs.container_test == 'true' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
 
