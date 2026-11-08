@@ -74,7 +74,7 @@ def pick_todays_post(calendar: dict, today: date):
             return {
                 "format": "giveaway", "category": gcat,
                 "image": item.get("image"),
-                "caption": item["text"] + "\n\n" + calendar["posts"][gcat].get("hashtags", ""),
+                "caption": item["text"] + "\n\n" + (item.get("hashtags") or calendar["posts"][gcat].get("hashtags", "")),
                 "threads_text": item.get("threads") or item["text"],
                 "reply": item.get("reply", ""),
                 "blog": item.get("blog", calendar["posts"][gcat].get("blog", "")),
@@ -111,7 +111,8 @@ def pick_todays_post(calendar: dict, today: date):
     return {
         "format": "question", "category": category,
         "image": item.get("image"),  # Instagram 용 텍스트 카드. Threads 는 텍스트 전용으로 올린다
-        "caption": item["text"] + "\n\n" + topic.get("hashtags", ""),
+        # 2026-11-08: 항목별 hashtags 가 있으면 그것을 쓴다 (같은 주제 글마다 태그 세트를 조금씩 달리 — 세트 복붙은 도달 하락 신호)
+        "caption": item["text"] + "\n\n" + (item.get("hashtags") or topic.get("hashtags", "")),
         "threads_text": item.get("threads") or item["text"],
         "reply": item.get("reply", ""),
         "blog": topic.get("blog", ""),
