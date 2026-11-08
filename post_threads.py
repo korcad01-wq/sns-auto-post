@@ -58,6 +58,9 @@ def main():
         if post.get("reply"):
             print("--- first reply ---")
             print(post["reply"])
+        if post["format"] != "giveaway" and build_link_reply(post, calendar):
+            print("--- link reply ---")
+            print(build_link_reply(post, calendar))
         print("검사:", "통과" if not problems else problems)
         return
     if os.environ.get("CONTAINER_TEST"):
@@ -96,6 +99,20 @@ def main():
     if reply and result.get("id"):
         time.sleep(20)
         publish_reply(user_id, token, result["id"], reply)
+    # 2026-11-08 (마케팅 스킬 100 · 029 스레드 콘텐츠 작성 "자료·링크 리플"): 링크는 본문이 아니라 내 첫 답글에 둔다.
+    # 본문 링크는 도달이 깎이고(전자책 실측), 답글 링크는 글을 읽은 사람만 누른다. giveaway 는 자기 답글(팔로우 안내)이 있어 제외.
+    link_reply = build_link_reply(post, calendar)
+    if link_reply and result.get("id") and post["format"] != "giveaway":
+        time.sleep(20)
+        publish_reply(user_id, token, result["id"], link_reply)
+
+
+def build_link_reply(post: dict, calendar: dict) -> str:
+    blog = (post.get("blog") or "").strip()
+    if not blog or not calendar.get("threads_link_in_reply", False):
+        return ""
+    lead = (calendar.get("threads_link_reply_text") or "자세한 내용은 블로그에 정리해 두었어요 →").strip()
+    return f"{lead} {blog}"
 
 
 if __name__ == "__main__":
