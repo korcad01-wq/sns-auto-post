@@ -793,5 +793,13 @@
   "_specials_설명": "날짜(KST)별 특별 게시물. 그날은 로테이션 글 대신 나가고 쉬는 요일보다 우선한다. video 가 있으면 IG 릴스·Threads 영상.",
   "threads_link_in_reply": true,
   "threads_link_reply_text": "자세한 내용은 블로그에 정리해 두었어요 →",
-  "_aba_20261108": "마케팅 스킬 100(031·029·규제 게이트) 적용: IG 캡션 저장 유도 1줄, question 항목별 hashtags, '최고 1억'→'최대 1억', 블로그 링크는 Threads 첫 답글로(threads_link_in_reply). 점검은 sns_lint.py"
+  "_aba_20261108": "마케팅 스킬 100(031·029·규제 게이트) 적용: IG 캡션 저장 유도 1줄, question 항목별 hashtags, '최고 1억'→'최대 1억', 블로그 링크는 Threads 첫 답글로(threads_link_in_reply). 점검은 sns_lint.py",
+  "post_hours_kst": {
+    "mon": 9,
+    "tue": 21,
+    "wed": 9,
+    "thu": 21,
+    "fri": 9
+  },
+  "_time_test_20261119": "2026-11-19~12-03 2주 시험: 월·수·금 09:00, 화·목 21:00. 같은 형식끼리(월·목 question, 수·금 card) 조회·답글 비교 뒤 결정. 끝나면 post_hours_kst 를 전부 21 또는 9 로."
 }
