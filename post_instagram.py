@@ -143,10 +143,31 @@ def resolve_today() -> date:
     return date.fromisoformat(override) if override else _now_kst().date()
 
 
+POST_HOURS_DEFAULT = {"mon": 21, "tue": 21, "wed": 21, "thu": 21, "fri": 21, "sat": 21, "sun": 21}
+LATE_WINDOW_H = 4  # 예정 시각부터 이 시간 안의 실행만 게시 (PC 가 늦게 켜진 경우 허용, 밤사이 밀린 cron 은 차단)
+
+
+def scheduled_hour_kst(now=None) -> int:
+    """오늘 요일의 게시 예정 시각(KST 시). content_calendar.json 의 post_hours_kst 가 기준.
+    2026-11-19~12-03 시험: 월·수·금 09시, 화·목 21시 (SNS_활성화_전략_2026-11-18.md)."""
+    now = now or _now_kst()
+    try:
+        hours = load_calendar().get("post_hours_kst") or {}
+    except Exception:  # noqa: BLE001
+        hours = {}
+    key = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"][now.weekday()]
+    return int(hours.get(key, POST_HOURS_DEFAULT[key]))
+
+
 def is_late_run() -> bool:
-    """KST 정오 전 실행이면 True. 21시 게시가 밤사이 밀렸거나(GitHub cron 지연),
-    PC 가 꺼져 있다 아침에 켜지며 놓친 예약이 돈 경우라 게시하지 않는다. POST_DATE 지정 시는 예외."""
-    return not os.environ.get("POST_DATE", "").strip() and _now_kst().hour < 12
+    """게시 예정 시각 창(예정 시각 ~ +4시간) 밖의 실행이면 True → 게시하지 않는다.
+    21시 글이 밤사이 밀렸거나(GitHub cron 지연), PC 가 꺼져 있다 다음 날 켜지며 놓친 예약이 돈 경우를 막는다.
+    2026-10-13 중복 사고 뒤 '정오 전 차단'이었으나 11-19 아침 게시 시험 때문에 요일별 창으로 바꿈. POST_DATE 지정 시는 예외."""
+    if os.environ.get("POST_DATE", "").strip():
+        return False
+    now = _now_kst()
+    start = scheduled_hour_kst(now)
+    return not (start <= now.hour < start + LATE_WINDOW_H)
 
 
 def check_token():
